@@ -1,5 +1,5 @@
 #read in data
-setwd("../../CC2015/data")
+setwd("../../Carnegie-SEM/data")
 cc2015 <- read.csv("CC2015data.csv",header = TRUE)
 
 ########2015################
