@@ -52,15 +52,44 @@ lavaan_sem_r <- lavaan::sem(model1, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE
 lavaan::summary(lavaan_sem_r, fit.measures=TRUE)
 
 CCScores_r <- lavaan::predict(lavaan_sem_r)
-plot(density(CCScores_r[,3]))
-
+plot(density(CCScores_r[,3])) 
 
 #used a PCA because it made more sense in my head
 PCScores <- prcomp(CCScores_r[,1:2])
 summary(prcomp(CCScores_r[,1:2]))
 
 PC <- as.data.frame(PCScores$x)
+plot(PC$PC1, PC$PC2, ylim=c(-20,20))
 boxplot(PC$PC1, horizontal = TRUE)
 plot(density(PC$PC1))
 abline(v=-6.76, col="red")
 abline(v=6.41, col="red")
+
+
+cc2015_matrix2 <- as.matrix(cc2015_r[-c(1:3)])
+Hmisc::rcorr(cc2015_matrix2)
+corrmatrix <- Hmisc::rcorr(cc2015_matrix2)
+corrplot::corrplot(corrmatrix$r)
+corrplot::corrplot(corrmatrix$r, order="hclust")
+
+
+
+
+
+model2 <- '
+Aggregate=~HUM_RSD+OTHER_RSD+SOCSC_RSD+STEM_RSD+PDNFRSTAFF+S.ER.D+NONS.ER.D
+PerCap=~PDNRSTAFF_PC+S.ER.D_PC+NONS.ER.D_PC
+
+Overall=~Aggregate+PerCap
+
+S.ER.D~~S.ER.D_PC
+NONS.ER.D~~NONS.ER.D_PC
+PDNFRSTAFF~~PDNRSTAFF_PC
+PDNFRSTAFF~~S.ER.D
+HUM_RSD~~SOCSC_RSD
+S.ER.D~~STEM_RSD
+PDNRSTAFF_PC~~S.ER.D_PC
+'
+
+lavaan_sem_r_cov <- lavaan::sem(model2, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+lavaan::summary(lavaan_sem_r_cov, fit.measures=TRUE)
