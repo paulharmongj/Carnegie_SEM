@@ -26,8 +26,8 @@ cc2015percap.r<-data.frame(sapply(cc2015percap,minrank))
 
 
 ###RUN THE sEM
-install.packages('lavaan')
-library(lavaan)
+#install.packages('lavaan')
+library(lavaan); library(blavaan)
 
 #to fit this model I'll need to have per-capita and full counts in the same dataset
 
@@ -45,8 +45,8 @@ Overall = ~ ag_latent + percap_latent
 #fit the SEM
 library(semPlot)
 
-sem.1 <- sem(model.carnegie, data=carn_dat, std.lv=TRUE, se = "boot", test = "Bollen.Stine", orthogonal = FALSE)
-semPaths(sem.1)
+sem.1 <- lavaan::sem(model.carnegie, data=carn_dat, std.lv=TRUE, se = "boot", test = "Bollen.Stine", orthogonal = FALSE)
+semPlot::semPaths(sem.1)
 #
 
 
@@ -69,18 +69,53 @@ ranked_dat <- as_tibble(cbind(cc2015.r, cc2015percap.r))
 
 model.carnegie.ranked <- '
 #measurement model
-ag_latent =~ S.ER.D + NONS.ER.D + STEM_RSD + SOCSC_RSD + OTHER_RSD + HUM_RSD
+ag_latent =~ S.ER.D + NONS.ER.D + STEM_RSD + SOCSC_RSD + OTHER_RSD + HUM_RSD + PDNFRSTAFF
 percap_latent =~ STAFFPC + SERDPC + NONSERDPC
 
 # regressions
-Overall = ~ ag_latent + percap_latent
+Overall =~ ag_latent + percap_latent
+
+#Correlations
+S.ER.D ~~ STEM_RSD 
+S.ER.D ~~ PDNFRSTAFF
+NONS.ER.D ~~ HUM_RSD
+NONS.ER.D ~~ SOCSC_RSD
+SOCSC_RSD ~~ HUM_RSD
+STAFFPC ~~ NONSERDPC
+
+#with per-capita stuff
+S.ER.D ~~ SERDPC
+NONS.ER.D ~~ NONSERDPC
+PDNFRSTAFF ~~ STAFFPC
+
+
 '
-sem.scale.rank <- sem(model.carnegie.ranked,data = ranked_dat, std.lv = TRUE)
+sem.scale.rank <- sem(model.carnegie.ranked,data = ranked_dat, se = "bootstrap",std.lv = TRUE)
+summary(sem.scale.rank)
+#has trouble with standard errors normally, but produces results with bootstrapped SE's
+
+#trying huber-white
+sem.scale.hw <- sem(model.carnegie.ranked, data = ranked_dat, se = "robust.huber.white", std.lv = TRUE)
+summary(sem.scale.hw, fit.measures = TRUE)
+
+
 
 #still running into identifiability issues
-install.packages('semPlot')
+#install.packages('semPlot')
 library(semPlot)
 semPlot::semPaths(sem.scale.rank,col = c('orange'))
+
+
+
+
+
+#let's try a Bayesian SEM
+bSEM <- blavaan::bsem(model.carnegie.ranked, data = ranked_dat, std.lv = TRUE, n.chains = 4, burnin = 100, sample = 1000)
+
+
+
+
+
 
 
 
