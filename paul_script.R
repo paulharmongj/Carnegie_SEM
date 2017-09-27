@@ -64,6 +64,7 @@ summary(sem.scale)
 
 #could we do this based on the ranks?
 names(cc2015percap.r) <- c("STAFFPC","SERDPC","NONSERDPC")
+library(tibble)
 ranked_dat <- as_tibble(cbind(cc2015.r, cc2015percap.r))
 
 model.carnegie.ranked <- '
