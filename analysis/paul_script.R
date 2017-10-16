@@ -98,7 +98,7 @@ summary(sem.scale.rank)
 
 #possibly mess with other SE measurments 
 
-sem.scale.hw <- sem(model.carnegie.ranked, data = ranked_dat, estimators = "ML", se = "robust.huber.white", std.lv = TRUE)
+sem.scale.hw <- sem(model.carnegie.ranked, data = ranked_dat, estimators = "ML", se = "robust.huber.white", std.lv = TRUE, orthogonal = FALSE)
 summary(sem.scale.hw, fit.measures = TRUE)
 
 inspect(sem.scale.hw, 'theta')
@@ -113,11 +113,14 @@ title("SEM Path Diagram")
 
 
 #let's try a Bayesian SEM
-bSEM <- blavaan::bsem(model.carnegie.ranked, data = ranked_dat, std.lv = TRUE, n.chains = 4, burnin = 100, sample = 1000)
+bSEM <- blavaan::bsem(model.carnegie.ranked, data = ranked_dat, cp = 'srs', std.lv = TRUE, n.chains = 2, burnin = 4000, sample = 10000)
+bAUTO <- blavaan::bsem(model.carnegie.ranked, data = ranked_dat, cp = 'srs', std.lev= TRUE, convergence = 'auto')
 
+blavInspect(bSEM, "psrf") #check Potential Scale Reduction Factor
 
 #lavaan.survey
 
+#
 svy.ob <- svydesign(fpc = ~1, data = ranked_dat, ids = rep(1,length(ranked_dat[,1])))
 lavaan.survey(model.carnegie.ranked, survey.design = svy.ob)
 
