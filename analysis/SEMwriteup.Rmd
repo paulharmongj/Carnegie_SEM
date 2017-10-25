@@ -1,0 +1,94 @@
+---
+title: "Carnegie SEM"
+output: pdf_document
+---
+
+We are attempting to run an SEM on the Carnegie Classification data to create a new classification system that does not rely on the PCA methodology currently in use. We attempted to run an SEM on the original, raw data, but it was highly right-skewed, so we changed to using ranked data, as the Carnegie Classification currently uses. This data is much more uniformly distributed (for the most part). 
+
+```{r, echo=FALSE}
+#read in data
+setwd("~/Carnegie-SEM/data")
+cc2015 <- read.csv("CC2015data.csv",header = TRUE)
+
+########2015################
+cc2015.full <- read.csv("CC2015data.csv", header = TRUE, as.is = TRUE)
+#updated file
+#cc2015.full <- read.csv("Updated2015.csv", header = TRUE)
+
+cc2015 <- cc2015.full[(cc2015.full$BASIC2015>14&cc2015.full$BASIC2015<18),]
+cc2015$BASIC2015 <- factor(cc2015$BASIC2015)
+
+#function for ranking the data
+minrank <- function(x){rank(x, ties.method = "min")}
+
+#dataset that we want to use
+cc2015Ps<-
+  na.omit(cc2015[,c("NAME","BASIC2010","BASIC2015","FACNUM","HUM_RSD","OTHER_RSD","SOCSC_RSD","STEM_RSD","PDNFRSTAFF","S.ER.D","NONS.ER.D")])
+
+#calculate the ranked data
+cc2015.r <- data.frame(cc2015Ps[,1:3],sapply(cc2015Ps[,-c(1:3)],minrank)) 
+cc2015percap <- cc2015Ps[,c("PDNFRSTAFF","S.ER.D","NONS.ER.D")]/cc2015Ps$FACNUM
+colnames(cc2015percap) <- c("PDNFRSTAFF_PC", "S.ER.D_PC", "NONS.ER.D_PC")
+cc2015percap.r<-data.frame(sapply(cc2015percap,minrank))
+cc2015_new <- cbind(cc2015Ps, cc2015percap)
+cc2015_r <- cbind(cc2015.r, cc2015percap.r)
+```
+
+```{r data_plots, echo=FALSE}
+par(mfrow=c(3,4))
+hist(cc2015_r$FACNUM, xlab="FACNUM", main="")
+hist(cc2015_r$HUM_RSD, xlab="HUM_RSD", main="")
+hist(cc2015_r$OTHER_RSD, xlab="OTHER_RSD", main="")
+hist(cc2015_r$SOCSC_RSD, xlab="SOCSC_RSD", main="")
+hist(cc2015_r$STEM_RSD, xlab="STEM_RSD", main="")
+hist(cc2015_r$PDNFRSTAFF, xlab="PDNFRSTAFF", main="")
+hist(cc2015_r$S.ER.D, xlab="S.ER.D", main="")
+hist(cc2015_r$NONS.ER.D, xlab="NONS.ER.D", main="")
+hist(cc2015_r$PDNFRSTAFF_PC, xlab="PNDRFSTAFF_PC", main="")
+hist(cc2015_r$S.ER.D_PC, xlab="S.ER.D_PC", main="")
+hist(cc2015_r$NONS.ER.D_PC, xlab="NONS.ER.D_PC", main="")
+```
+
+We then attempted a regular SEM with the ranked data. This worked, but only with bootstrapped SE estimates and the fit was terrible (RMSEA = 0.9). Upon further exploration of the data, we realized that certain manifest variables in our data were highly correlated. 
+
+```{r, echo=FALSE}
+cc2015_matrix2 <- as.matrix(cc2015_r[-c(1:3)])
+corrmatrix <- Hmisc::rcorr(cc2015_matrix2)
+corrplot::corrplot(corrmatrix$r, order="hclust")
+```
+
+So, with this new information in hand, we created a new model, aimed at minimizing RMSEA by modeling correlations. This model fit a lot better than the original model (RMSEA = 0.1) but the overall scores we got out were bimodal.
+
+```{r}
+model2 <- '
+Aggregate=~HUM_RSD+OTHER_RSD+SOCSC_RSD+STEM_RSD+PDNFRSTAFF+S.ER.D+NONS.ER.D
+PerCap=~PDNRSTAFF_PC+S.ER.D_PC+NONS.ER.D_PC
+
+Overall=~Aggregate+PerCap
+
+S.ER.D~~S.ER.D_PC
+NONS.ER.D~~NONS.ER.D_PC
+PDNFRSTAFF~~PDNRSTAFF_PC
+PDNFRSTAFF~~S.ER.D
+HUM_RSD~~SOCSC_RSD
+S.ER.D~~STEM_RSD
+PDNRSTAFF_PC~~S.ER.D_PC
+NONS.ER.D~~HUM_RSD
+NONS.ER.D~~SOCSC_RSD
+'
+
+lavaan_sem_r_cov <- lavaan::sem(model2, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+semPlot::semPaths(lavaan_sem_r_cov)
+#lavaan::summary(lavaan_sem_r_cov, fit.measures=TRUE)
+CCScores_r_cov <- as.data.frame(lavaan::predict(lavaan_sem_r_cov))
+density(CCScores_r_cov$Overall)
+range_scores <- max(CCScores_r_cov$Overall) - min(CCScores_r_cov$Overall)
+CCScores_r_cov$rate_2015 <- ifelse(CCScores_r_cov$Overall < min(CCScores_r_cov$Overall)+((1/3)*range_scores), 'A', ifelse(CCScores_r_cov$Overall > max(CCScores_r_cov$Overall)-((1/3)*range_scores), 'C', 'B'))
+CC_table <- as.data.frame(cbind(cc2015_new$NAME, cc2015_new$BASIC2015, CCScores_r_cov$rate_2015))
+colnames(CC_table) <- c("name", "basic2015", "rate2015")
+table(cc2015_new$BASIC2015, CC_table$rate2015)
+```
+
+Recalling that our original data did not follow a modal distribution, the results seemed strange, and the contingency table showed that we only seemed to able to match up with the highest rating group. With that haing seemingly failed in producing three groups, we switched to Bayesian SEM models.  
+
+#Paul's Bayesian Stuff
