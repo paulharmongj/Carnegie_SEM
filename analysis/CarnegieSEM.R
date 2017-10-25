@@ -1,5 +1,5 @@
 #read in data
-setwd("../../Carnegie-SEM/data")
+setwd("~/Carnegie-SEM/data")
 cc2015 <- read.csv("CC2015data.csv",header = TRUE)
 
 ########2015################
@@ -48,6 +48,7 @@ abline(v=-0.14, col="red")
 #sem using ranked data
 cc2015_r <- cbind(cc2015.r, cc2015percap.r)
 
+
 lavaan_sem_r <- lavaan::sem(model1, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="boot", test="Bollen.Stine", bootstrap=1000)
 lavaan::summary(lavaan_sem_r, fit.measures=TRUE)
 
@@ -89,7 +90,24 @@ PDNFRSTAFF~~S.ER.D
 HUM_RSD~~SOCSC_RSD
 S.ER.D~~STEM_RSD
 PDNRSTAFF_PC~~S.ER.D_PC
+NONS.ER.D~~HUM_RSD
+NONS.ER.D~~SOCSC_RSD
 '
 
-lavaan_sem_r_cov <- lavaan::sem(model2, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+lavaan_sem_r_cov <- lavaan::sem(model2, data=cc2015_r, std.lev=TRUE, orthogonal=FALSE, se="robust.huber.white")
 lavaan::summary(lavaan_sem_r_cov, fit.measures=TRUE)
+CCScores_r_cov <- as.data.frame(lavaan::predict(lavaan_sem_r_cov))
+range_scores <- max(CCScores_r_cov$Overall) - min(CCScores_r_cov$Overall)
+CCScores_r_cov$rate_2015 <- ifelse(CCScores_r_cov$Overall < min(CCScores_r_cov$Overall)+((1/3)*range_scores), 'A', ifelse(CCScores_r_cov$Overall > max(CCScores_r_cov$Overall)-((1/3)*range_scores), 'C', 'B'))
+CC_table <- as.data.frame(cbind(cc2015_new$NAME, cc2015_new$BASIC2015, CCScores_r_cov$rate_2015))
+colnames(CC_table) <- c("name", "basic2015", "rate2015")
+table(cc2015_new$BASIC2015, CC_table$rate2015)
+
+require(blavaan)
+bsem_norm <- blavaan::bsem(model2, data=cc2015_r, cp='srs', std.lev=TRUE, convergence='auto', dp=dpriors())
+summary(bsem_norm)
+bNORM <- blavaan::bsem(model2, data=cc2015_r, cp='srs', std.lv=TRUE, convergence='auto', dp=dpriors(lambda="dnorm(0,10000)"))
+summary(bNORM) #lambda
+bUNIF <- blavaan::bsem(model2, data=cc2015_r, cp='srs', std.lev=TRUE, convergence='auto', dp=dpriors(lambda="dunif(0, 250)"))
+summary(bUNIF)
+
