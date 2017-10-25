@@ -35,9 +35,9 @@ model1 <- '
   Overall=~Aggregate+PerCap
 '
 
-lavaan_sem_b <- lavaan::sem(model1, data=cc2015_new, std.lv=TRUE,se="boot",test="Bollen.Stine",bootstrap=1000, orthogonal=FALSE)
-lavaan::summary(lavaan_sem_b, fit.measures=TRUE)
-lavaan::parameterEstimates(lavaan_sem_b,boot.ci.type="norm",standardized=T)
+#lavaan_sem_b <- lavaan::sem(model1, data=cc2015_new, std.lv=TRUE,se="boot",test="Bollen.Stine",bootstrap=1000, orthogonal=FALSE)
+#lavaan::summary(lavaan_sem_b, fit.measures=TRUE)
+#lavaan::parameterEstimates(lavaan_sem_b,boot.ci.type="norm",standardized=T)
 
 
 CCScores <- lavaan::predict(lavaan_sem_b)
@@ -122,6 +122,7 @@ colnames(CC_table) <- c("name", "basic2015", "rate2015")
 #misclassification rate
 table(cc2015_new$BASIC2015, CC_table$rate2015)
 library(ggplot2)
+a <- which(cc2015$new$NAME == "Montana State University")
 ggplot(CCScores_r_cov) + geom_point(aes(x = Aggregate, y = PerCap, color = cc2015_new$BASIC2015, shape = rate_2015, size = as.numeric(cc2015_new$BASIC2015))) + 
   ggtitle("Predicted vs Actual Classifications") + geom_point(aes(x = Aggregate[a],y = PerCap[a],size = 4))
 
@@ -149,15 +150,18 @@ get_Distance <- function(x1,x2,y1,y2){
   
  #calculates the euclidean distance between the points  
   dist <- sqrt((x2 - x1)^2 + (y2 - y1)^2)
- #returns distances
-  return(dist)
+ distx <- x2 - x1
+ disty <- y2 - y1
+  #returns distances
+  return(list( dist = dist, distx = distx, disty = disty ))
 }
 
 Score_dist$Distance <- c()
 
 for (j in 1:nrow(Score_dist)){
-  Score_dist$Distance[j] <- get_Distance(x1 = Score_dist[j,"Aggregate"],x2 = Score_dist[j,"PC_ag_pred"],y1 = Score_dist[j,"PerCap"],y2 = Score_dist[j,"PC_percap_pred"])
-}
+  Score_dist$Distance[j] <- get_Distance(x1 = Score_dist[j,"Aggregate"],x2 = Score_dist[j,"PC_ag_pred"],y1 = Score_dist[j,"PerCap"],y2 = -Score_dist[j,"PC_percap_pred"])$dist
+
+  }
 
 #Let's look at distances
 sorted <- Score_dist[order(Score_dist$Distance),]
@@ -167,6 +171,16 @@ tail(sorted,10)
 summary(Score_dist$Distance)
 
 #show biggest movers on Carnegie Classifications Plot
-ggplot(Score_dist) + geom_point(aes(x = PC_ag_pred, y = PC_percap_pred, color = as.factor(round(Distance)))) + ggtitle("Biggest Movers")
+ggplot(Score_dist) + geom_point(aes(x = PC_ag_pred, y = -PC_percap_pred, color = as.factor(floor(Distance)))) + ggtitle("Biggest Movers")
+
+
+#look at x, y distances
+
+distance_matrix <- matrix(0,nrow = nrow(Score_dist), ncol = 3)
+for (j in 1:nrow(Score_dist)){
+  distance_matrix[j,] <- get_Distance(x1 = Score_dist[j,"Aggregate"],x2 = Score_dist[j,"PC_ag_pred"],y1 = Score_dist[j,"PerCap"],y2 = -Score_dist[j,"PC_percap_pred"])
+  
+}
+#look at squared distances in one direction
 
 
