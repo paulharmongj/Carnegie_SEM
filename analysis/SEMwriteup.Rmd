@@ -56,6 +56,7 @@ hist(cc2015_r$NONS.ER.D_PC, xlab="NONS.ER.D_PC", main="")
 We then attempted a regular SEM with the ranked data. This worked, but only with bootstrapped SE estimates and the fit was terrible (RMSEA = 0.9). Upon further exploration of the data, we realized that certain manifest variables in our data were highly correlated. 
 
 ```{r, echo=FALSE}
+par(mfrow = c(1,1))
 cc2015_matrix2 <- as.matrix(cc2015_r[-c(1:3)])
 corrmatrix <- Hmisc::rcorr(cc2015_matrix2)
 corrplot::corrplot(corrmatrix$r, order="hclust")
@@ -66,17 +67,17 @@ So, with this new information in hand, we created a new model, aimed at minimizi
 ```{r}
 model2 <- '
 Aggregate=~HUM_RSD+OTHER_RSD+SOCSC_RSD+STEM_RSD+PDNFRSTAFF+S.ER.D+NONS.ER.D
-PerCap=~PDNRSTAFF_PC+S.ER.D_PC+NONS.ER.D_PC
+PerCap=~PDNFRSTAFF_PC+S.ER.D_PC+NONS.ER.D_PC
 
 Overall=~Aggregate+PerCap
 
 S.ER.D~~S.ER.D_PC
 NONS.ER.D~~NONS.ER.D_PC
-PDNFRSTAFF~~PDNRSTAFF_PC
+PDNFRSTAFF~~PDNFRSTAFF_PC
 PDNFRSTAFF~~S.ER.D
 HUM_RSD~~SOCSC_RSD
 S.ER.D~~STEM_RSD
-PDNRSTAFF_PC~~S.ER.D_PC
+PDNFRSTAFF_PC~~S.ER.D_PC
 NONS.ER.D~~HUM_RSD
 NONS.ER.D~~SOCSC_RSD
 '
@@ -122,6 +123,20 @@ To better understand the mechanics of the R package Blavaan, we tried fitting a 
 The SEM model and the PCA-based Carnegie model were both used to make plots of aggregate and per-capita traits associated with each institution. Neither plot produces multiple well-separated groups; however, the PCA-based method is slightly more well-separated. 
 
 ```{r}
+#Generates PCA scores for comparison
+PC_ag <- prcomp(cc2015.r[,-c(1,2,3,4)], scale = TRUE)
+PC_percap <- prcomp(cc2015percap.r, scale = TRUE)
+
+PC_ag_pred <- predict(PC_ag)[,1]
+PC_percap_pred <- predict(PC_percap)[,1]
+
+PC_pred_scale <- apply(as.data.frame(cbind(PC_ag_pred,PC_percap_pred)),2,scale)
+
+#predicts the scores
+CCScores_r_cov <- as.data.frame(lavaan::predict(lavaan_sem_r_cov))
+CCScores_r_cov_scale <- apply(CCScores_r_cov[,c(1,2)], 2, scale)
+
+
 ###lets see if we can calculate distances with schools
 Score_dist <- as.data.frame(cbind(CCScores_r_cov_scale, PC_pred_scale))
 rownames(Score_dist) <- cc2015_new$NAME
@@ -130,22 +145,30 @@ rownames(Score_dist) <- cc2015_new$NAME
 ggplot(Score_dist) + geom_point(aes(x = PC_ag_pred, y = -PC_percap_pred, color = cc2015_new$BASIC2015)) + ggtitle("Carnegie Classification PC Plot")
 
 ggplot(Score_dist) + geom_point(aes(x = Aggregate, y = PerCap, color = CCScores_r_cov$rate_2015))
+```
 
 
+#Which Schools Move the Most?
+The plot below shows which schools move the most relative to their location on the Carnegie classifications. These movements are not systematic; while most of the schools that move the most are near the center, they are not all occurning in one classification level. 
+
+```{r,distances, fig.align = 'center'}
 #calculate distances 
 get_Distance <- function(x1,x2,y1,y2){
   
  #calculates the euclidean distance between the points  
   dist <- sqrt((x2 - x1)^2 + (y2 - y1)^2)
- #returns distances
-  return(dist)
+ distx <- x2 - x1
+ disty <- y2 - y1
+  #returns distances
+  return(list( dist = dist, distx = distx, disty = disty ))
 }
 
 Score_dist$Distance <- c()
 
 for (j in 1:nrow(Score_dist)){
-  Score_dist$Distance[j] <- get_Distance(x1 = Score_dist[j,"Aggregate"],x2 = Score_dist[j,"PC_ag_pred"],y1 = Score_dist[j,"PerCap"],y2 = Score_dist[j,"PC_percap_pred"])
-}
+  Score_dist$Distance[j] <- get_Distance(x1 = Score_dist[j,"Aggregate"],x2 = Score_dist[j,"PC_ag_pred"],y1 = Score_dist[j,"PerCap"],y2 = -Score_dist[j,"PC_percap_pred"])$dist
+
+  }
 
 #Let's look at distances
 sorted <- Score_dist[order(Score_dist$Distance),]
@@ -155,12 +178,27 @@ tail(sorted,10)
 summary(Score_dist$Distance)
 
 #show biggest movers on Carnegie Classifications Plot
-ggplot(Score_dist) + geom_point(aes(x = PC_ag_pred, y = PC_percap_pred, color = as.factor(round(Distance)))) + ggtitle("Biggest Movers")
+ggplot(Score_dist) + geom_point(aes(x = PC_ag_pred, y = -PC_percap_pred, color = as.factor(floor(Distance)))) + ggtitle("Biggest Movers")
 
 ```
 
 
 
+
+#Additional Ways to Visualize These Models
+There are two ways that we can visualize these plots. One uses GGplot to create path diagrams in a ggplot-based framework. These are similar to the SemPlot package but may allow for a bit more post processing of the plots. The unfortunate aspect of these plots is that they have to be put together piece by piece - there's no function that directly interfaces with lavaan to get the solution. 
+```{r}
+#add code to produce a path diagram here
+```
+
+
+An alternative way to look at these models would be to uses the Onyx package, which interfaces with the lavaan code but allows for you to make changes to the path diagrams in a separate window.  These are not great for this kind of context but they are useful for creating pretty-looking path diagrams. Onyx has to be installed from GitHub to work, but other than that it interfaces nicely with lavaan objects. 
+```{r}
+library(onyxR)
+onyx(lavaan_sem_r_cov)
+onyx(lavaan_sem_b)
+onyx(lavaan_sem_r)
+```
 
 
 
