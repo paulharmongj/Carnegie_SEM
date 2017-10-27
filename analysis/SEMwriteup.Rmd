@@ -1,9 +1,13 @@
 ---
 title: "Carnegie SEM"
+author: "Sarah McKnight and Paul Harmon"
 output: pdf_document
 ---
 
-We are attempting to run an SEM on the Carnegie Classification data to create a new classification system that does not rely on the PCA methodology currently in use. We attempted to run an SEM on the original, raw data, but it was highly right-skewed, so we changed to using ranked data, as the Carnegie Classification currently uses. This data is much more uniformly distributed (for the most part). 
+#Introduction:
+We are attempting to run an SEM on the Carnegie Classification data to create a new classification system that does not rely on the PCA methodology currently in use. The Carnegie Classifications are currently based on two data-driven PCAs, meaning that loadings can change from year to year.  We hope to create a stable model that better allows for comparisons on a single dimension. This was done using Structural Equation Modeling (SEM).
+
+We attempted to run an SEM on the original, raw data, but it was highly right-skewed, so we changed to using ranked data, as the Carnegie Classification currently uses.  Each of the metrics are ranked based on the minimum method for ties.  These data are much more uniformly distributed than the original data, which were highly skewed in the positive direction. These data included very large values for outlier institutions such as MIT and Harvard, but most of the schools were clustered at smaller values. 
 
 ```{r, echo=FALSE}
 #read in data
@@ -92,3 +96,77 @@ table(cc2015_new$BASIC2015, CC_table$rate2015)
 Recalling that our original data did not follow a modal distribution, the results seemed strange, and the contingency table showed that we only seemed to able to match up with the highest rating group. With that haing seemingly failed in producing three groups, we switched to Bayesian SEM models.  
 
 #Paul's Bayesian Stuff
+An alternative to the traditional SEM model is the Bayesian SEM, which allows for prior distributions to be put on the latent variables. 
+
+In a traditional SEM model, the manifors
+
+These models can be fit using the package "blavaan" (Merkle and Rosseel 2016); however, it is a beta package that is still being tested for validity and stability. 
+
+
+## Testing with Linear Regression
+To better understand the mechanics of the R package Blavaan, we tried fitting a simple regression model to a dataset with which were already familiar. We were able to match the estimates with a linear model using lm(), which is expected. The choice of priors was Normal. 
+
+
+## A First Model
+
+## Changing Priors
+ 
+## Sensitivity to Priors
+
+##Bayesian SEM - Some Conclusions
+
+
+
+
+#Comparing the SEM model to the Carnegie Classifications
+The SEM model and the PCA-based Carnegie model were both used to make plots of aggregate and per-capita traits associated with each institution. Neither plot produces multiple well-separated groups; however, the PCA-based method is slightly more well-separated. 
+
+```{r}
+###lets see if we can calculate distances with schools
+Score_dist <- as.data.frame(cbind(CCScores_r_cov_scale, PC_pred_scale))
+rownames(Score_dist) <- cc2015_new$NAME
+
+#recreates the PC-based plot
+ggplot(Score_dist) + geom_point(aes(x = PC_ag_pred, y = -PC_percap_pred, color = cc2015_new$BASIC2015)) + ggtitle("Carnegie Classification PC Plot")
+
+ggplot(Score_dist) + geom_point(aes(x = Aggregate, y = PerCap, color = CCScores_r_cov$rate_2015))
+
+
+#calculate distances 
+get_Distance <- function(x1,x2,y1,y2){
+  
+ #calculates the euclidean distance between the points  
+  dist <- sqrt((x2 - x1)^2 + (y2 - y1)^2)
+ #returns distances
+  return(dist)
+}
+
+Score_dist$Distance <- c()
+
+for (j in 1:nrow(Score_dist)){
+  Score_dist$Distance[j] <- get_Distance(x1 = Score_dist[j,"Aggregate"],x2 = Score_dist[j,"PC_ag_pred"],y1 = Score_dist[j,"PerCap"],y2 = Score_dist[j,"PC_percap_pred"])
+}
+
+#Let's look at distances
+sorted <- Score_dist[order(Score_dist$Distance),]
+head(sorted,10)
+tail(sorted,10)
+
+summary(Score_dist$Distance)
+
+#show biggest movers on Carnegie Classifications Plot
+ggplot(Score_dist) + geom_point(aes(x = PC_ag_pred, y = PC_percap_pred, color = as.factor(round(Distance)))) + ggtitle("Biggest Movers")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
