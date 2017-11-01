@@ -1,0 +1,60 @@
+---
+title: "Carnegie SEM"
+author: "Paul Harmon and Sarah McKnight"
+date: "November 1, 2017"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## The Carnegie Classifications
+
+- Based on PCA
+- Two Scales: Aggregate (x-axis) and Per-Capita (y-axis)
+
+![The 2015 Classifications]()
+
+## How are Scores Calculated?
+The Carnegie Classifications are based on ranked data (because some schools are vastly larger on certain metrics than the rest). The ranked data are partitioned into two datasets and a PCA is generated on the both datasets. The first PC score is then used as an index for each trait. 
+
+## Aggregate and Per-Capita Indices
+
+The classifications are calculated based on two indices of institutional output. The first is based on a weighted average of the number of PhDs awarded by the institution; the second is based on a per-capita measurement of research expenditures and research staff. 
+__Aggregate Index:__
+$$Ag.Index_{i}  = HumanitiesPhD_{i} + StemPhD_{i} + SocialSciencePhD_{i} + OtherPhD_{i}  + StemExpenditures_{i} + NonStemExpenditures_{i} + ResearchStaff_{i} $$ 
+__Per Capita Index:__ 
+$$PC.Index_{i} = \frac{ResearchStaff_{i} + StemExpenditures_{i} + NonStemExpenditures_{i}}{FacultySize_{i}} $$ 
+
+
+## PCA Plot - Arbitrary Boundaries
+
+From here, the methodology of the Carnegie Classifications is to produce a plot of the two correlated indices. Lines are arbitrarily drawn to create three partitions of the space. The following plot is produced. 
+
+![The 2015 Classifications with lines](https://github.com/paulharmongj/Writing-Project/Carnegie Classifications/Presentation_for_writing_maybe_files/figure-beamer/unstandardized scores-1.pdf)
+
+## Problems with PCA
+Many of the decisions made in this process are data driven and are outside the control of researchers:
+
++ Aggregate and Per-Capita Indices were constructed so that they are correlated, 
++ Attributes of the PCA change from year to year, meaning important policy drivers in one year might not be important in the next year (Social Science PhDs) 
++ Data are rarely grouped into three neat clusters, and lines are arbitrarily drawn 
+
+__Because of this, we wanted to try fitting a Structural Equation Model to create an index to compete with the Carnegie Classifications__
+
+## Structural Equation Models
+__GoaL__: Model two latent traits, one for the aggreagate scale and the other for the per-capita scale, and then use those to generate a "super-latent" single trait. 
+
+We could then separate institutions into groups via univariate model-based clustering or something as simple as breaking the single variable into several groups. 
+
+##SEM Model
+
+
+
+##Path Diagram
+
+##Questions
+
+
+
