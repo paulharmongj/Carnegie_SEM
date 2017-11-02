@@ -1,11 +1,10 @@
 ---
-title: "Carnegie SEM"
+title: "Presentation For Laura"
 author: "Paul Harmon and Sarah McKnight"
-date: "November 1, 2017"
+date: "November 2, 2017"
 output:
-beamer_presentation:
-  theme: "AnnArbor"
-  colortheme: "dolphin"
+  slidy_presentation: default
+  ioslides_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -213,4 +212,3 @@ ggplot(Score_dist) + geom_point(aes(x = PC_ag_pred, y = -PC_percap_pred, color =
 
 
 ##Thanks! 
-
