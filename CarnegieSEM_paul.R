@@ -108,7 +108,16 @@ PC_percap <- prcomp(cc2015percap.r, scale = TRUE)
 PC_ag_pred <- predict(PC_ag)[,1]
 PC_percap_pred <- predict(PC_percap)[,1]
 
+
+
+#alternative path diagrams
+source('https://raw.githubusercontent.com/brandmaier/onyxR/master/tools/install.R')
+library(onyxR)
+onyx(lavaan_sem_r_cov)
+onyx(lavaan_sem_b)
+onyx(lavaan_sem_r)
 PC_pred_scale <- apply(as.data.frame(cbind(PC_ag_pred,PC_percap_pred)),2,scale)
+
 
 #predicts the scores
 CCScores_r_cov <- as.data.frame(lavaan::predict(lavaan_sem_r_cov))
@@ -123,16 +132,9 @@ colnames(CC_table) <- c("name", "basic2015", "rate2015")
 table(cc2015_new$BASIC2015, CC_table$rate2015)
 library(ggplot2)
 a <- which(cc2015$new$NAME == "Montana State University")
-ggplot(CCScores_r_cov) + geom_point(aes(x = Aggregate, y = PerCap, color = cc2015_new$BASIC2015, shape = rate_2015, size = as.numeric(cc2015_new$BASIC2015))) + 
-  ggtitle("Predicted vs Actual Classifications") + geom_point(aes(x = Aggregate[a],y = PerCap[a],size = 4))
+ggplot(CCScores_r_cov) + geom_point(aes(x = Aggregate, y = PerCap, color = cc2015_new$BASIC2015)) + 
+  ggtitle("Predicted vs Actual Classifications") #+ geom_point(aes(x = Aggregate,y = PerCap,size = 4))
 
-
-#alternative path diagrams
-source('https://raw.githubusercontent.com/brandmaier/onyxR/master/tools/install.R')
-library(onyxR)
-onyx(lavaan_sem_r_cov)
-onyx(lavaan_sem_b)
-onyx(lavaan_sem_r)
 #not sure I'm a big fan of this package, but it does create alternate path diagrams
 
 ###lets see if we can calculate distances with schools
@@ -183,4 +185,76 @@ for (j in 1:nrow(Score_dist)){
 }
 #look at squared distances in one direction
 
+
+#more stuff with laura's suggestions
+#idea: to smash everything into a single latent trait
+model.carnegie.all <- '
+#measurement model
+overall =~ S.ER.D + NONS.ER.D + STEM_RSD + SOCSC_RSD + OTHER_RSD + HUM_RSD + PDNFRSTAFF + FACNUM
+
+#Correlations
+S.ER.D ~~ STEM_RSD 
+S.ER.D ~~ PDNFRSTAFF
+NONS.ER.D ~~ HUM_RSD
+NONS.ER.D ~~ SOCSC_RSD
+SOCSC_RSD ~~ HUM_RSD
+
+'
+
+#Generates the SEM
+lavaan_sem_r_ALL <- lavaan::sem(model.carnegie.all, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+lavaan::summary(lavaan_sem_r_ALL, fit.measures=TRUE)
+
+#pathdiagram
+semPaths(lavaan_sem_r_ALL)
+
+#alternative parameterization: counts and funding as two different STEM/nonSTEM indices
+model_alt <- '
+STEM=~+STEM_RSD+PDNFRSTAFF+S.ER.D + FACNUM
+HUM=~HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D + FACNUM
+
+Overall=~STEM+HUM
+
+
+
+NONS.ER.D ~~ HUM_RSD
+NONS.ER.D ~~ SOCSC_RSD
+
+'
+lavaan_sem_r_alternate <- lavaan::sem(model_alt, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+lavaan::summary(lavaan_sem_r_alternate, fit.measures=TRUE)
+
+#path diagram
+semPaths(lavaan_sem_r_alternate)
+
+
+predict_alt <- lavaan::predict(lavaan_sem_r_alternate)
+plot(-predict_alt[,1],-predict_alt[,2], col = cc2015_r$BASIC2015, pch = 11)
+plot(density(-predict_alt[,3]))
+
+
+
+
+#alternative model with added facnum as its own latent trait
+#alternative parameterization: counts and funding as two different STEM/nonSTEM indices
+model_alt_2 <- '
+STEM =~+ STEM_RSD + S.ER.D
+HUM =~ HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D
+FACSIZE =~ PDNFRSTAFF + FACNUM
+
+Overall=~STEM+HUM+FACSIZE
+
+
+PDNFRSTAFF~~S.ER.D
+HUM_RSD~~SOCSC_RSD
+S.ER.D~~STEM_RSD
+NONS.ER.D~~HUM_RSD
+NONS.ER.D~~SOCSC_RSD
+
+'
+lavaan_sem_r_alternate_2 <- lavaan::sem(model_alt_2, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+lavaan::summary(lavaan_sem_r_alternate_2, fit.measures=TRUE)
+
+#path diagram
+semPaths(lavaan_sem_r_alternate_2)
 
