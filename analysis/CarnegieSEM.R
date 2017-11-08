@@ -111,3 +111,19 @@ summary(bNORM) #lambda
 bUNIF <- blavaan::bsem(model2, data=cc2015_r, cp='srs', std.lev=TRUE, convergence='auto', dp=dpriors(lambda="dunif(0, 250)"))
 summary(bUNIF)
 
+model3 <- '
+Aggregate=~HUM_RSD+OTHER_RSD+SOCSC_RSD+STEM_RSD+PDNFRSTAFF+S.ER.D+NONS.ER.D
+
+PDNFRSTAFF~~S.ER.D
+HUM_RSD~~SOCSC_RSD
+NONS.ER.D~~HUM_RSD
+NONS.ER.D~~SOCSC_RSD
+'
+lavaan_sem_r_cov_agg <- lavaan::sem(model3, data=cc2015_r, std.lev=TRUE, orthogonal=FALSE, se="robust.huber.white")
+lavaan::summary(lavaan_sem_r_cov_agg, fit.measures=TRUE)
+
+model4 <- '
+Aggregate=~HUM_RSD+OTHER_RSD+SOCSC_RSD+STEM_RSD+PDNFRSTAFF+S.ER.D+NONS.ER.D
+'
+lavaan_sem_r_cov_aggs <- lavaan::sem(model4, data=cc2015_r, std.lev=TRUE, orthogonal=FALSE, se="robust.huber.white")
+lavaan::summary(lavaan_sem_r_cov_aggs, fit.measures=TRUE)
