@@ -49,7 +49,7 @@ cc2015_r <- cbind(cc2015.r, cc2015percap.r)
 
 - Based on PCA on correlation matrix of ranked institutional data
 - Two Scales: Aggregate (x-axis) and Per-Capita (y-axis)
-_ Three categories of PhD-granting institutions: R1 to R3
+- Three categories of PhD-granting institutions: R1 to R3
 
 ## Carnegie in 2015
 ![The 2015 Classifications](figures/2015classifications.png)
@@ -142,10 +142,13 @@ text(-1,1.2,"Path Diagram", font = 2, cex = 2)
 ```
 
 ## Densities of Our Scores
-
+Distribution was bimodal - schools were grouped into two groups
 ```{r, message = FALSE, warning = FALSE}
 CCScores_r_cov_predicted <- as.data.frame(lavaan::predict(lavaan_sem_r_cov))
 plot(density(CCScores_r_cov_predicted$Overall))
+library(beanplot)
+beanplot(CCScores_r_cov_predicted$Overall, col = c("blue",'orange'), method = "jitter")
+title("SEM Classifications")
 ```
 
 

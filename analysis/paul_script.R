@@ -1,4 +1,7 @@
 #read in data
+
+
+
 setwd("C:/Users/paulh/Downloads")
 cc2015 <- read.csv("CC2015data.csv",header = TRUE)
 
@@ -120,14 +123,29 @@ blavInspect(bSEM, "psrf") #check Potential Scale Reduction Factor
 
 #lavaan.survey
 
-#
-svy.ob <- svydesign(fpc = ~1, data = ranked_dat, ids = rep(1,length(ranked_dat[,1])))
+#svy.ob <- svydesign(fpc = ~1, data = ranked_dat, ids = rep(1,length(ranked_dat[,1])))
 lavaan.survey(model.carnegie.ranked, survey.design = svy.ob)
 
 
+##Per meeting November 2, I looked at a couple of other SEM MODELS 
 
+model.carnegie.ranked <- '
+#measurement model
+ag_overall =~ S.ER.D + NONS.ER.D + STEM_RSD + SOCSC_RSD + OTHER_RSD + HUM_RSD + PDNFRSTAFF + FACNUM
 
+#Correlations
+S.ER.D ~~ STEM_RSD 
+S.ER.D ~~ PDNFRSTAFF
+NONS.ER.D ~~ HUM_RSD
+NONS.ER.D ~~ SOCSC_RSD
+SOCSC_RSD ~~ HUM_RSD
+STAFFPC ~~ SERDPC
 
+#with per-capita stuff
+S.ER.D ~~ SERDPC
+NONS.ER.D ~~ NONSERDPC
+PDNFRSTAFF ~~ STAFFPC
+'
 
 
 

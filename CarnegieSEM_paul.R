@@ -216,7 +216,7 @@ HUM=~HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D + FACNUM
 Overall=~STEM+HUM
 
 
-
+#covariances - maybe omit?
 NONS.ER.D ~~ HUM_RSD
 NONS.ER.D ~~ SOCSC_RSD
 
