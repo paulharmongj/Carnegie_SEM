@@ -39,3 +39,5 @@ Aggregate=~HUMANITIES+STEM'
 lavaan_sem_new <- lavaan::sem(model4, data=cc2015_r, std.lv=TRUE,
                               orthogonal=FALSE, se="robust.huber.white")
 lavaan::summary(lavaan_sem_new, standardized=TRUE, fit.measures=TRUE)
+CCScores <- as.data.frame(lavaan::predict(lavaan_sem_new))
+rownames(CCScores) <- cc2015Ps$NAME
