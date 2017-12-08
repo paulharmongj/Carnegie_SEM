@@ -1,0 +1,41 @@
+#read in data
+setwd("~/Carnegie-SEM/data")
+cc2015 <- read.csv("CC2015data.csv",header = TRUE)
+
+########2015################
+cc2015.full <- read.csv("CC2015data.csv", header = TRUE, as.is = TRUE)
+#updated file
+#cc2015.full <- read.csv("Updated2015.csv", header = TRUE)
+
+cc2015 <- cc2015.full[(cc2015.full$BASIC2015>14&cc2015.full$BASIC2015<18),]
+cc2015$BASIC2015 <- factor(cc2015$BASIC2015)
+
+
+#function for ranking the data
+minrank <- function(x){rank(x, ties.method = "min")}
+
+#dataset that we want to use
+cc2015Ps<-
+  na.omit(cc2015[,c("NAME","BASIC2010","BASIC2015","FACNUM","HUM_RSD",
+                    "OTHER_RSD","SOCSC_RSD","STEM_RSD","PDNFRSTAFF","S.ER.D","NONS.ER.D")])
+
+#calculate the ranked data
+cc2015.r <- data.frame(cc2015Ps[,1:3],sapply(cc2015Ps[,-c(1:3)],minrank)) 
+
+cc2015percap <- cc2015Ps[,c("PDNFRSTAFF","S.ER.D","NONS.ER.D")]/cc2015Ps$FACNUM
+colnames(cc2015percap) <- c("PDNRSTAFF_PC", "S.ER.D_PC", "NONS.ER.D_PC")
+cc2015percap.r<-data.frame(sapply(cc2015percap,minrank))
+cc2015_r <- cbind(cc2015.r, cc2015percap.r)
+
+cc2015_matrix2 <- as.matrix(cc2015_r[-c(1:3)])
+corrmatrix <- Hmisc::rcorr(cc2015_matrix2)
+corrplot::corrplot(corrmatrix$r, order="hclust")
+
+model4 <- '
+HUMANITIES=~HUM_RSD+OTHER_RSD+SOCSC_RSD+NONS.ER.D+FACNUM
+STEM=~STEM_RSD+PDNFRSTAFF+S.ER.D+FACNUM
+Aggregate=~HUMANITIES+STEM'
+
+lavaan_sem_new <- lavaan::sem(model4, data=cc2015_r, std.lv=TRUE,
+                              orthogonal=FALSE, se="robust.huber.white")
+lavaan::summary(lavaan_sem_new, standardized=TRUE, fit.measures=TRUE)
