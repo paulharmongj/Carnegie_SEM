@@ -106,10 +106,6 @@ HUM=~HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D + FACNUM
 #factor of factors
 Overall=~STEM+HUM
 
-#covariances - maybe omit?
-#NONS.ER.D ~~ HUM_RSD
-#NONS.ER.D ~~ SOCSC_RSD
-
 '
 lavaan_sem_r_alternate <- lavaan::sem(model_alt, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
 lavaan::summary(lavaan_sem_r_alternate, fit.measures=TRUE)
@@ -127,8 +123,8 @@ colnames(CC_table) <- c("name", "basic2015", "rate2015")
 table(cc2015_new$BASIC2015, CC_table$rate2015)
 library(ggplot2)
 a <- which(cc2015$new$NAME == "Montana State University")
-ggplot(CCScores_r_cov) + geom_point(aes(x = STEM, y = HUM, color = cc2015_new$BASIC2015)) + 
-  ggtitle("Predicted vs Actual Classifications") + theme_bw()
+#ggplot(CCScores_r_cov) + geom_point(aes(x = STEM, y = HUM, color = cc2015_new$BASIC2015)) + 
+#  ggtitle("Predicted vs Actual Classifications") + theme_bw()
 
 
 server <- function(input, output) {
@@ -182,7 +178,7 @@ server <- function(input, output) {
     #misclassification rate
     table(cc2015_new$BASIC2015, CC_table$rate2015)
     library(ggplot2)
-    a <- which(cc2015$new$NAME == "Montana State University")
+    
     ggplot(CCScores_r_cov) + geom_point(aes(x = STEM, y = HUM, color = cc2015_new$BASIC2015)) + 
       ggtitle("Predicted vs Actual Classifications") + theme_bw()
     
@@ -192,3 +188,4 @@ server <- function(input, output) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
