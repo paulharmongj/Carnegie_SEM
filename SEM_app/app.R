@@ -6,9 +6,13 @@
 # probably is to just run all of the code in the R-Code for Carnegie Stuff.R file. We might source it in later .
 #
 
+#reads in the dataset needed
+cc2015 <- read.csv("C:/Users/paulh/Documents/Carnegie-SEM/data/CC2015data.csv",header = TRUE)
+names <- unique(cc2015$NAME)
+#gets the right package going
 library(shiny)
 
-# Define UI for application that draws a histogram
+# Define UI for application that allows you to pick a college and see how it would change
 ui <- fluidPage(
   
   # Application title
@@ -17,6 +21,12 @@ ui <- fluidPage(
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
+      
+      selectInput(inputId = "school", "School", choices = names, selected = NULL, multiple = FALSE,
+                  selectize = TRUE, width = NULL, size = NULL)
+      
+      , 
+      
       sliderInput("sosc",
                   "Number of Additional Social Science PhDs from 0:",
                   min = 0,
@@ -73,13 +83,7 @@ ui <- fluidPage(
 )
 
 # Define server logic required to change the classifications
-cc2015Ps <- read.csv("C:/Users/paulh/Documents/Carnegie-SEM/data/CC2015data.csv",header = TRUE)
-a <- which(cc2015Ps$NAME == "Montana State University")
-
-
-cc2015 <- cc2015.full[(cc2015.full$BASIC2015>14&cc2015.full$BASIC2015<18),]
-cc2015$BASIC2015 <- factor(cc2015$BASIC2015)
-
+cc2015 <- read.csv("C:/Users/paulh/Documents/Carnegie-SEM/data/CC2015data.csv",header = TRUE)
 
 #function for ranking the data
 minrank <- function(x){rank(x, ties.method = "min")}
@@ -91,13 +95,6 @@ cc2015Ps<-
 #calculate the ranked data
 cc2015.r <- data.frame(cc2015Ps[,1:3],sapply(cc2015Ps[,-c(1:3)],minrank)) 
 
-cc2015percap <- cc2015Ps[,c("PDNFRSTAFF","S.ER.D","NONS.ER.D")]/cc2015Ps$FACNUM
-colnames(cc2015percap) <- c("PDNRSTAFF_PC", "S.ER.D_PC", "NONS.ER.D_PC")
-cc2015percap.r<-data.frame(sapply(cc2015percap,minrank))
-
-#sem using raw data
-cc2015_new <- cbind(cc2015Ps, cc2015percap)
-cc2015_r <- cbind(cc2015.r, cc2015percap.r)
 
 model_alt <- '
 #latent factors
@@ -107,7 +104,7 @@ HUM=~HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D + FACNUM
 Overall=~STEM+HUM
 
 '
-lavaan_sem_r_alternate <- lavaan::sem(model_alt, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+lavaan_sem_r_alternate <- lavaan::sem(model_alt, data=cc2015.r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
 lavaan::summary(lavaan_sem_r_alternate, fit.measures=TRUE)
 
 #predicts the scores
@@ -115,21 +112,20 @@ CCScores_r_cov <- as.data.frame(lavaan::predict(lavaan_sem_r_alternate))
 CCScores_r_cov_scale <- apply(CCScores_r_cov[,c(1,2)], 2, scale)
 range_scores <- max(CCScores_r_cov$Overall) - min(CCScores_r_cov$Overall)
 CCScores_r_cov$rate_2015 <- ifelse(CCScores_r_cov$Overall < min(CCScores_r_cov$Overall)+((1/3)*range_scores), 'A', ifelse(CCScores_r_cov$Overall > max(CCScores_r_cov$Overall)-((1/3)*range_scores), 'C', 'B'))
-CC_table <- as.data.frame(cbind(cc2015_new$NAME, cc2015_new$BASIC2015, CCScores_r_cov$rate_2015))
-colnames(CC_table) <- c("name", "basic2015", "rate2015")
+#CC_table <- as.data.frame(cbind(cc2015_new$NAME, cc2015_new$BASIC2015, CCScores_r_cov$rate_2015))
+#colnames(CC_table) <- c("name", "basic2015", "rate2015")
+
+#we want to reference the correctly input school
 
 
 #misclassification rate
-table(cc2015_new$BASIC2015, CC_table$rate2015)
 library(ggplot2)
-a <- which(cc2015$new$NAME == "Montana State University")
-#ggplot(CCScores_r_cov) + geom_point(aes(x = STEM, y = HUM, color = cc2015_new$BASIC2015)) + 
-#  ggtitle("Predicted vs Actual Classifications") + theme_bw()
-
 
 server <- function(input, output) {
   # cc2015.full <- read.csv("Updated2015.csv", header = TRUE)
   
+  current_school <- reactive(as.character(input$school))
+  a <- which(cc2015Ps$NAME %in% c(current_school))
   
   output$distPlot <- renderPlot({
     
@@ -155,32 +151,20 @@ server <- function(input, output) {
     
     cc2015.r <- data.frame(cc2015Ps[,1:3],sapply(cc2015Ps[,-c(1:3)],minrank)) 
     
-    cc2015percap <- cc2015Ps[,c("PDNFRSTAFF","S.ER.D","NONS.ER.D")]/cc2015Ps$FACNUM
-    colnames(cc2015percap) <- c("PDNRSTAFF_PC", "S.ER.D_PC", "NONS.ER.D_PC")
-    cc2015percap.r<-data.frame(sapply(cc2015percap,minrank))
     
-    #sem using raw data
-    cc2015_new <- cbind(cc2015Ps, cc2015percap)
-    cc2015_r <- cbind(cc2015.r, cc2015percap.r)
-    
-    lavaan_sem_r_alternate <- lavaan::sem(model_alt, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
-    lavaan::summary(lavaan_sem_r_alternate, fit.measures=TRUE)
+    lavaan_sem_r_alternate_new <- lavaan::sem(model_alt, data=cc2015.r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+    lavaan::summary(lavaan_sem_r_alternate_new, fit.measures=TRUE)
     
     #predicts the scores
-    CCScores_r_cov <- as.data.frame(lavaan::predict(lavaan_sem_r_alternate))
-    CCScores_r_cov_scale <- apply(CCScores_r_cov[,c(1,2)], 2, scale)
-    range_scores <- max(CCScores_r_cov$Overall) - min(CCScores_r_cov$Overall)
-    CCScores_r_cov$rate_2015 <- ifelse(CCScores_r_cov$Overall < min(CCScores_r_cov$Overall)+((1/3)*range_scores), 'A', ifelse(CCScores_r_cov$Overall > max(CCScores_r_cov$Overall)-((1/3)*range_scores), 'C', 'B'))
-    CC_table <- as.data.frame(cbind(cc2015_new$NAME, cc2015_new$BASIC2015, CCScores_r_cov$rate_2015))
-    colnames(CC_table) <- c("name", "basic2015", "rate2015")
-    
-    
-    #misclassification rate
-    table(cc2015_new$BASIC2015, CC_table$rate2015)
-    library(ggplot2)
-    
-    ggplot(CCScores_r_cov) + geom_point(aes(x = STEM, y = HUM, color = cc2015_new$BASIC2015)) + 
-      ggtitle("Predicted vs Actual Classifications") + theme_bw()
+    CCScores_r_cov_new <- as.data.frame(lavaan::predict(lavaan_sem_r_alternate_new))
+    range_scores_new <- max(CCScores_r_cov_new$Overall) - min(CCScores_r_cov_new$Overall)
+    CCScores_r_cov_new$rate_2015 <- ifelse(CCScores_r_cov_new$Overall < min(CCScores_r_cov_new$Overall)+((1/3)*range_scores), 'A', ifelse(CCScores_r_cov$Overall > max(CCScores_r_cov$Overall)-((1/3)*range_scores), 'C', 'B'))
+   
+  CCScores_r_cov_new$symbols <- rep(0,length(CCScores_r_cov_new)) 
+  CCScores_r_cov_new$symbols[a] <- 1
+  #creates a plot and colors by Carnegie Classification Colors  
+  ggplot(CCScores_r_cov_new) + geom_point(aes(x = STEM, y = HUM, color = factor(symbols), symbol = factor(symbols)))+ 
+   ggtitle("Predicted vs Actual Classifications") + theme_bw() + coord_fixed(ratio = 1)
     
     
   })
