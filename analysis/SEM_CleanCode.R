@@ -1,3 +1,5 @@
+options(scipen=999)
+
 #read in data
 setwd("~/Carnegie-SEM/data")
 cc2015 <- read.csv("CC2015data.csv",header = TRUE)
@@ -41,3 +43,35 @@ lavaan_sem_new <- lavaan::sem(model4, data=cc2015_r, std.lv=TRUE,
 lavaan::summary(lavaan_sem_new, standardized=TRUE, fit.measures=TRUE)
 CCScores <- as.data.frame(lavaan::predict(lavaan_sem_new))
 rownames(CCScores) <- cc2015Ps$NAME
+
+library(beanplot)
+beanplot(CCScores$Aggregate,log="",col="yellow",method="jitter")
+
+library(mclust)
+mcres<-Mclust(CCScores$Aggregate)
+summary(mcres)
+par(mfrow=c(2,2))
+plot(mcres,what="BIC")
+plot(mcres,what="classification")
+plot(mcres,what="uncertainty")
+plot(mcres,what="density")
+
+Classifications <- as.data.frame(mcres[14:15])
+rownames(Classifications) <- cc2015Ps$NAME
+
+table(mcres$classification, cc2015Ps$BASIC2015) ## pretty good!!
+
+#Or more directly:
+dens<-densityMclust(CCScores$Aggregate)
+summary(dens)
+par(mfrow=c(1,2))
+plot(dens,what="diagnostic")
+
+#Or clustering the STEM and HUMANITIES scores (bivariate version)
+mcres2<-Mclust(CCScores[,1:2])
+par(mfrow=c(2,2))
+plot(mcres2,what="BIC")
+plot(mcres2,what="classification")
+plot(mcres2,what="uncertainty")
+plot(mcres2,what="density")
+
