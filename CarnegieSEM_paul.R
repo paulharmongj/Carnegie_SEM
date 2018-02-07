@@ -210,15 +210,15 @@ semPaths(lavaan_sem_r_ALL)
 
 #alternative parameterization: counts and funding as two different STEM/nonSTEM indices
 model_alt <- '
-STEM=~+STEM_RSD+PDNFRSTAFF+S.ER.D + FACNUM
+#latent factors
+STEM=~STEM_RSD+PDNFRSTAFF+S.ER.D + FACNUM
 HUM=~HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D + FACNUM
-
+#factor of factors
 Overall=~STEM+HUM
 
-
 #covariances - maybe omit?
-NONS.ER.D ~~ HUM_RSD
-NONS.ER.D ~~ SOCSC_RSD
+#NONS.ER.D ~~ HUM_RSD
+#NONS.ER.D ~~ SOCSC_RSD
 
 '
 lavaan_sem_r_alternate <- lavaan::sem(model_alt, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
@@ -238,13 +238,13 @@ plot(density(-predict_alt[,3]))
 #alternative model with added facnum as its own latent trait
 #alternative parameterization: counts and funding as two different STEM/nonSTEM indices
 model_alt_2 <- '
-STEM =~+ STEM_RSD + S.ER.D
+STEM =~ STEM_RSD + S.ER.D
 HUM =~ HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D
 FACSIZE =~ PDNFRSTAFF + FACNUM
 
 Overall=~STEM+HUM+FACSIZE
 
-
+#covariances between factors
 PDNFRSTAFF~~S.ER.D
 HUM_RSD~~SOCSC_RSD
 S.ER.D~~STEM_RSD
