@@ -8,7 +8,7 @@
 #
 
 #reads in the dataset needed
-library(dplyr)
+library(dplyr);library(ggplot2);library(ggthemes)
 cc2015 <- filter(read.csv("C:/Users/paulh/Documents/Carnegie-SEM/data/CC2015data.csv",header = TRUE),BASIC2015 %in%c(15,16,17))
 
 names <- unique(cc2015$NAME)
@@ -33,41 +33,39 @@ ui <- fluidPage(
                   selectize = TRUE, width = NULL, size = NULL)
       
       , 
-      actionButton("update", "Change School")
-      ,
       
       hr(),
       
       sliderInput("sosc",
-                  "Number of Additional Social Science PhDs from 0:",
+                  "Number of Additional Social Science PhDs:",
                   min = 0,
                   max = 60,
                   value = 0)
       ,
       
       sliderInput("other",
-                  "Number of Additional Other PhDs from 9:",
+                  "Number of Additional Other PhDs:",
                   min = -9,
                   max = 50,
                   value = 0)
       ,
       sliderInput("stem",
-                  "Number of Additional STEM PhDs from 45:",
+                  "Number of Additional STEM PhDs:",
                   min = -45,
-                  max = 50,
+                  max = 5000,
                   step = 5,
                   value = 0)
       ,
       sliderInput("hum",
-                  "Number of Additional Humanities PhDs from 2:",
+                  "Number of Additional Humanities PhDs:",
                   min = -2,
                   max = 50,
                   value = 0)
       ,
       sliderInput("staff",
-                  "Additional Research Staff from 75:",
+                  "Additional Research Staff:",
                   min = -75,
-                  max = 2000,
+                  max = 20000,
                   value = 0,
                   step = 100)
       ,
@@ -89,12 +87,13 @@ ui <- fluidPage(
     # Show a plot of the generated distribution
     mainPanel(
       plotOutput("classPlot"),
-      h3(textOutput("swag"))
-    )
+          )
   )
 )
 
-# Define server logic required to change the classifications
+
+
+# GLOBAL CODE #######################################################
 cc2015 <- read.csv("C:/Users/paulh/Documents/Carnegie-SEM/data/CC2015data.csv",header = TRUE)
 
 #function for ranking the data
@@ -130,8 +129,8 @@ CCScores_r_cov$rate_2015 <- ifelse(CCScores_r_cov$Overall < min(CCScores_r_cov$O
 #we want to reference the correctly input school
 
 
-#misclassification rate
-library(ggplot2)
+
+
 
 server <- function(input, output) {
   # cc2015.full <- read.csv("Updated2015.csv", header = TRUE)
@@ -143,8 +142,8 @@ server <- function(input, output) {
   })
   
   
-new_data <- reactive({
-    
+  output$classPlot <- renderPlot({
+  
     inst_name <- new_school()
     new_dat <- cc2015Ps
     
@@ -171,31 +170,31 @@ new_data <- reactive({
     new_dat[a,"NONS.ER.D"] <- new_dat[a,"NONS.ER.D"] + input$nonserd
     #adds to SERD expenditures
     new_dat[a,"S.ER.D"] <- new_dat[a,"S.ER.D"] + input$serd
-    
-  })
 
-  
-  output$classPlot <- renderPlot({
+##########REMOVE THIS CODE#########################################    
+COLOR <- rep(1,nrow(new_dat)); COLOR[a] <- 2 
+    #plot(new_dat$PDNFRSTAFF, pch = 19 + COLOR, col = COLOR, cex = COLOR)
+####################################################################  
+
+  new_dat_r <- data.frame(new_dat[,1:3],sapply(new_dat[,-c(1:3)],minrank)) 
     
-    new_dat <- new_data()
+  lavaan_NEW<- lavaan::sem(model_alt, data=new_dat_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+  lavaan::summary(lavaan_NEW, fit.measures=TRUE)
     
-  ##now re-calculate the SEM
-    new_dat_r <- data.frame(new_dat[,1:3],sapply(cc2015Ps[,-c(1:3)],minrank)) 
-    
-    lavaan_sem_r_alternate_new <- lavaan::sem(model_alt, data=new_dat_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
-    lavaan::summary(lavaan_sem_r_alternate_new, fit.measures=TRUE)
-    
-   ##predicts the scores
-    CCScores_r_cov_new <- as.data.frame(lavaan::predict(lavaan_sem_r_alternate_new))
+  ##predicts the scores
+    CCScores_r_cov_new <- as.data.frame(lavaan::predict(lavaan_NEW))
     range_scores_new <- max(CCScores_r_cov_new$Overall) - min(CCScores_r_cov_new$Overall)
     CCScores_r_cov_new$rate_2015 <- ifelse(CCScores_r_cov_new$Overall < min(CCScores_r_cov_new$Overall)+((1/3)*range_scores), 'A', ifelse(CCScores_r_cov$Overall > max(CCScores_r_cov$Overall)-((1/3)*range_scores), 'C', 'B'))
-   
-    ##Code to generate the plot and change the indices 
-  CCScores_r_cov_new$symbols <- rep(0,length(CCScores_r_cov_new)) 
-  CCScores_r_cov_new$symbols[a] <- 1
+    
+  ##Code to generate the plot and change the indices 
+    CCScores_r_cov_new$symbols <- rep(0,length(CCScores_r_cov_new)) 
+    CCScores_r_cov_new$symbols[a] <- 1
   #creates a plot and colors by Carnegie Classification Colors  
-  ggplot(CCScores_r_cov_new) + geom_point(aes(x = STEM, y = HUM, color = factor(symbols), shape = factor(symbols), size = factor(symbols)))+ 
-   ggtitle("Predicted vs Actual Classifications") + theme_bw() + coord_fixed(ratio = 1)
+    ggplot(CCScores_r_cov_new) + geom_point(aes(x = STEM, y = HUM, color = factor(symbols), shape = factor(symbols), size = factor(symbols)))+ 
+      ggtitle("Predicted vs Actual Classifications") + theme_bw() + coord_fixed(ratio = 1)+
+      theme_classic()
+    
+  
   })
 
   
