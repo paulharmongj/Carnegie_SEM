@@ -1,0 +1,83 @@
+---
+title: "Untitled"
+author: "Paul Harmon"
+date: "April 2, 2018"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Institutional Classifications
+Systems for identifying like institutions, ranking universities, and delineating similar groups of peer-schools are used by students, faculty and administrators alike. They include:
+
++ The Carnegie Classifications for Higher Education
++ The US News World Ranking
++ Times Higher Ed
+
+However, each one is subjective, and no perfect classifier exists. However, administrators use these to inform policy decisions (Montana State University, Idaho University), so it is useful to know how they work. 
+
+
+## The Carnegie Classifications
+
+The Carnegie Classifications delineate doctoral-granting institutions into three groups: 
++ R1: Very High Research
++ R2: High Research
++ R3: Moderate Research
+
+Previously, they had been updated every five years. However, that has changed to a three year cycle in the future. Data are collected in a snapshot from IPEDS and other sources to be used in each update. 
+
+
+
+## The Carnegie Methodology
+
++ Rank Institutions
++ Index Creation: PCA of aggregate and per-capita variables
++ Plot the Indices (per-capita vs aggregate)
++ Create groups (via line-drawing)
+
+## Principal Components Analysis 
+Principal Componenents Analysis is a method for dimension reduction that takes a set of p predictor variables and decomposes it into k principal components that explain the most variation in the underlying variables. 
+
+![picture]()
+
+## Problems with Carnegie System
+The process used by the Carnegie Classifications illustrates several problems:
++ Snapshot Data
++ 
++ 
++ 
+
+
+
+
+## Structural Equation Modeling
+
+Structural Equation Models (SEM) 
+
+## The Carnegie Method using SEMs
+
+
+
+## STEM and Non-STEM Factors
+A more intuitive method would be to consider two latent factors:
+
++ STEM productivity 
++ Non-STEM productivity
+
+Variables loaded onto these factors are not as likely to be correlated. 
+
+
+## Determining Group Membership
+The SEM model returns a single factor score for each university. These can be used as inputs to a 
+
+## Group Membership
+
+
+## Future Work
+
+## Conclusions and 
+
+
+
