@@ -1,11 +1,11 @@
 
 
 #read in data
-setwd("~/Carnegie-SEM/data")
-cc2015 <- read.csv("CC2015data.csv",header = TRUE)
+#setwd("~/Carnegie-SEM/data")
+cc2015 <- read.csv("data/CC2015data.csv",header = TRUE)
 
 ########2015################
-cc2015.full <- read.csv("CC2015data.csv", header = TRUE, as.is = TRUE)
+cc2015.full <- read.csv("data/CC2015data.csv", header = TRUE, as.is = TRUE)
 #updated file
 #cc2015.full <- read.csv("Updated2015.csv", header = TRUE)
 
@@ -25,13 +25,26 @@ cc2015Ps<-
 cc2015.r <- data.frame(cc2015Ps[,1:3],sapply(cc2015Ps[,-c(1:3)],minrank)) 
 
 cc2015percap <- cc2015Ps[,c("PDNFRSTAFF","S.ER.D","NONS.ER.D")]/cc2015Ps$FACNUM
+
+
 colnames(cc2015percap) <- c("PDNRSTAFF_PC", "S.ER.D_PC", "NONS.ER.D_PC")
+#for Corrplot, nothing else
+
+
 cc2015percap.r<-data.frame(sapply(cc2015percap,minrank))
 cc2015_r <- cbind(cc2015.r, cc2015percap.r)
+names(cc2015_r) <- c("Name","2010 Basic","2015 Basic","Faculty Size", "Hum PhD",
+                     "Other PhD","Soc. Sci PhD", "STEM PhD","Res. Staff", "STEM Exp", 
+                     "NS Exp", "Res. Staff PC", "STEM Exp PC  ", "NS Exp PC")
 
 cc2015_matrix2 <- as.matrix(cc2015_r[-c(1:3)])
 corrmatrix <- Hmisc::rcorr(cc2015_matrix2)
-corrplot::corrplot(corrmatrix$r, order="hclust")
+
+par(mar = c(1,.8,.8,2))
+corrplot::corrplot(corrmatrix$r, order="hclust", type = "upper")
+text(-4,3, 'Correlation Plot', font = 2)
+text(-4,2,'of Manifest Variables', font = 2)
+rect(-7,1.3,-1,3.5)
 
 model4 <- '
 HUMANITIES=~HUM_RSD+OTHER_RSD+SOCSC_RSD+NONS.ER.D+FACNUM
