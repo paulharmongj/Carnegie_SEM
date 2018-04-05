@@ -49,7 +49,7 @@ cc2015_r <- cbind(cc2015.r, cc2015percap.r)
 
 - Based on PCA on correlation matrix of ranked institutional data
 - Two Scales: Aggregate (x-axis) and Per-Capita (y-axis)
-- Three categories of PhD-granting institutions: R1 to R3
+-u Three categories of PhD-granting institutions: R1 to R3
 
 ## Carnegie in 2015
 ![The 2015 Classifications](figures/2015classifications.png)

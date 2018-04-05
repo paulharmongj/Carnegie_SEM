@@ -99,8 +99,6 @@ Recalling that our original data did not follow a modal distribution, the result
 #Paul's Bayesian Stuff
 An alternative to the traditional SEM model is the Bayesian SEM, which allows for prior distributions to be put on the latent variables. 
 
-In a traditional SEM model, the manifors
-
 These models can be fit using the package "blavaan" (Merkle and Rosseel 2016); however, it is a beta package that is still being tested for validity and stability. 
 
 
@@ -109,12 +107,27 @@ To better understand the mechanics of the R package Blavaan, we tried fitting a 
 
 
 ## A First Model
+The first model considered was the bayesian SEM with no additional changes made to the code. The estimates were quite different from those calculated in the original SEM. We looked into the priors and saw that some of them were pretty highly informative. 
+```{r}
+require(blavaan)
+bsem_norm <- blavaan::bsem(model2, data=cc2015_r, cp='srs', std.lev=TRUE, convergence='auto', dp=dpriors())
+summary(bsem_norm)
+```
+
+
 
 ## Changing Priors
+The highly informative priors should have shrunk the estimators a little too much, so we decided to try some normal priors with large variance terms (in order to not be so informative). Since the latent variables are assumed in a frequentist setting to be multivariate normals, we assumed that normal priors with large variances would be uninformative and thus reasonable. However, using them gave us even more shrunk estimates compared to the frequentist SEM. 
+```{r}
+bNORM <- blavaan::bsem(model2, data=cc2015_r, cp='srs', std.lv=TRUE, convergence='auto', dp=dpriors(lambda="dnorm(0,10000)"))
+summary(bNORM) #lambda
+```
+ 
  
 ## Sensitivity to Priors
+As of now, the sensitivity of the prior choice is a problem. We want fairly stable estimates and the Blavaan method is  not giving us something particularly useful. 
 
-##Bayesian SEM - Some Conclusions
+Moreover, Blavaan kicks the estimation of posteriors out to JAGS, and occasionally convergence issues have been a problem. It may be better to think about coding out a Bayesian version of SEM by ourselves rather than fitting the SEM using a package. 
 
 
 
@@ -144,7 +157,7 @@ rownames(Score_dist) <- cc2015_new$NAME
 #recreates the PC-based plot
 ggplot(Score_dist) + geom_point(aes(x = PC_ag_pred, y = -PC_percap_pred, color = cc2015_new$BASIC2015)) + ggtitle("Carnegie Classification PC Plot")
 
-ggplot(Score_dist) + geom_point(aes(x = Aggregate, y = PerCap, color = CCScores_r_cov$rate_2015))
+ggplot(Score_dist) + geom_point(aes(x = Aggregate, y = PerCap, color = cc2015_new$BASIC2015))
 ```
 
 
@@ -195,7 +208,7 @@ There are two ways that we can visualize these plots. One uses GGplot to create 
 An alternative way to look at these models would be to uses the Onyx package, which interfaces with the lavaan code but allows for you to make changes to the path diagrams in a separate window.  These are not great for this kind of context but they are useful for creating pretty-looking path diagrams. Onyx has to be installed from GitHub to work, but other than that it interfaces nicely with lavaan objects. 
 ```{r}
 library(onyxR)
-onyx(lavaan_sem_r_cov)
+  onyx(lavaan_sem_r_cov)
 onyx(lavaan_sem_b)
 onyx(lavaan_sem_r)
 ```

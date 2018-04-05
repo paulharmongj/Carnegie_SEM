@@ -6,7 +6,7 @@ setwd("C:/Users/paulh/Downloads")
 cc2015 <- read.csv("CC2015data.csv",header = TRUE)
 
 ########2015################
-cc2015.full <- read.csv("CC2015data.csv", header = TRUE, as.is = TRUE)
+cc2015.full <- read.csv("data/CC2015data.csv", header = TRUE, as.is = TRUE)
 #updated file
 #cc2015.full <- read.csv("Updated2015.csv", header = TRUE)
 

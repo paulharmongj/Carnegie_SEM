@@ -1,5 +1,17 @@
+---
+title: "For Laura"
+author: "Paul Harmon and Sarah McKnight"
+date: "December 11, 2017"
+output: pdf_document
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
+We generated a new SEM model for the Carnegie Data in order to get things to run efficiently. The code for generating the model and reading in the dataset is given below.  
+
+```{r}
 #read in data
 setwd("~/Carnegie-SEM/data")
 cc2015 <- read.csv("CC2015data.csv",header = TRUE)
@@ -32,7 +44,12 @@ cc2015_r <- cbind(cc2015.r, cc2015percap.r)
 cc2015_matrix2 <- as.matrix(cc2015_r[-c(1:3)])
 corrmatrix <- Hmisc::rcorr(cc2015_matrix2)
 corrplot::corrplot(corrmatrix$r, order="hclust")
+```
 
+Based on the inability of the previous model to generate a positive-definite variance covariance matrix, we looked back at the model and determined that things are too highly correlated to get things to work. Rather than modeling the Aggregate and Per-Capita traits from the same set of variables, we decided to look at STEM vs. Non-STEM differences. This allowed us to have two correlated factors, but they did not depend on the same variables so we were able to get results that looked reasonable. 
+
+The model fit is below: 
+```{r}
 model4 <- '
 HUMANITIES=~HUM_RSD+OTHER_RSD+SOCSC_RSD+NONS.ER.D+FACNUM
 STEM=~STEM_RSD+PDNFRSTAFF+S.ER.D+FACNUM
@@ -44,34 +61,27 @@ lavaan::summary(lavaan_sem_new, standardized=TRUE, fit.measures=TRUE)
 CCScores <- as.data.frame(lavaan::predict(lavaan_sem_new))
 rownames(CCScores) <- cc2015Ps$NAME
 
-library(beanplot)
-beanplot(CCScores$Aggregate,log="",col="yellow",method="jitter")
+```
 
-library(mclust)
-mcres<-Mclust(CCScores$Aggregate)
-summary(mcres)
-par(mfrow=c(2,2))
-plot(mcres,what="BIC")
-plot(mcres,what="classification")
-plot(mcres,what="uncertainty")
-plot(mcres,what="density")
+The model would look like the following, in a path diagram: 
 
-Classifications <- as.data.frame(mcres[14:15])
-rownames(Classifications) <- cc2015Ps$NAME
+```{r}
+library(semPlot)
+semPaths(lavaan_sem_new)
+```
 
-table(mcres$classification, cc2015Ps$BASIC2015) ## pretty good!!
 
-#Or more directly:
-dens<-densityMclust(CCScores$Aggregate)
-summary(dens)
-par(mfrow=c(1,2))
-plot(dens,what="diagnostic")
+Finally, we can generate a plot of the factors plotted against each other: 
+```{r}
+library(ggplot2)
+CCScores_r_cov_new <- as.data.frame(lavaan::predict(lavaan_sem_new))
+names(CCScores_r_cov_new)
+    #creates a plot and colors by Carnegie Classification Colors  
+  ggplot(CCScores_r_cov_new) + geom_point(aes(x = STEM, y = HUMANITIES), color = "gray30", symbol = "gray30")+ 
+   ggtitle("Predicted vs Actual Classifications") + theme_bw() + coord_fixed(ratio = 1)
+```
 
-#Or clustering the STEM and HUMANITIES scores (bivariate version)
-mcres2<-Mclust(CCScores[,1:2])
-par(mfrow=c(2,2))
-plot(mcres2,what="BIC")
-plot(mcres2,what="classification")
-plot(mcres2,what="uncertainty")
-plot(mcres2,what="density")
+
+
+
 

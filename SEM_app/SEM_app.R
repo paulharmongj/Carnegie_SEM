@@ -30,9 +30,7 @@ ui <- fluidPage(
     sidebarPanel(
       
       selectInput(inputId = "school", "School", choices = names, selected = NULL, multiple = FALSE,
-                  selectize = TRUE, width = NULL, size = NULL)
-      
-      , 
+                  selectize = TRUE, width = NULL, size = NULL), 
       
       hr(),
       
@@ -87,6 +85,7 @@ ui <- fluidPage(
     # Show a plot of the generated distribution
     mainPanel(
       plotOutput("classPlot"),
+      tableOutput("swag")
           )
   )
 )
@@ -199,7 +198,15 @@ COLOR <- rep(1,nrow(new_dat)); COLOR[a] <- 2
 
   
   #render some test text
-  output$swag <- renderText("Hello World!")
+  output$swag <- renderTable({
+  
+    inst_name <- new_school()
+    a <- which(as.character(cc2015Ps$NAME) == as.character(inst_name))
+    
+    new_table <- cc2015Ps[a,]
+    
+    new_table
+      }) 
     
 }
 
