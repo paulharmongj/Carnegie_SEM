@@ -64,6 +64,9 @@ lavaan::summary(lavaan_sem_new, standardized=TRUE, fit.measures=TRUE)
 CCScores <- as.data.frame(lavaan::predict(lavaan_sem_new))
 rownames(CCScores) <- cc2015Ps$NAME
 
+#checks the standardized factor loadings
+inspect(lavaan_sem_new, what = 'std')$lambda
+
 #path diagram
 
 source('https://raw.githubusercontent.com/brandmaier/onyxR/master/tools/install.R')
