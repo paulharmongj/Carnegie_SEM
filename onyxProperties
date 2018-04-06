@@ -1,8 +1,10 @@
 #---No Comment---
-#Mon Jan 15 20:23:13 MST 2018
-CurrentTipOfTheDay=2
+#Fri Apr 06 16:03:00 MDT 2018
+CurrentTipOfTheDay=4
 ShowTipOfTheDay=true
 RPath=
+recent1=X\:\\PH_Desktop\\Carnegie\\Carnegie_SEM\\analysis\\final_model.xml
 BackgroundImage=
-DefaultWorkingPath=
+recent0=X\:\\PH_Desktop\\Carnegie\\Carnegie_SEM\\analysis\\carnegie_model.xml
+DefaultWorkingPath=X\:\\PH_Desktop\\Carnegie\\Carnegie_SEM\\analysis
 CheckForUpdates=true
