@@ -8,8 +8,8 @@
 #
 
 #reads in the dataset needed
-library(dplyr);library(ggplot2);library(ggthemes)
-cc2015 <- filter(read.csv("C:/Users/paulh/Documents/Carnegie-SEM/data/CC2015data.csv",header = TRUE),BASIC2015 %in%c(15,16,17))
+library(dplyr);library(ggplot2);library(ggthemes);library(mclust)
+cc2015 <- filter(read.csv("CC2015data.csv",header = TRUE),BASIC2015 %in%c(15,16,17))
 
 names <- unique(cc2015$NAME)
 #gets the right package going
@@ -93,7 +93,7 @@ ui <- fluidPage(
 
 
 # GLOBAL CODE #######################################################
-cc2015 <- read.csv("C:/Users/paulh/Documents/Carnegie-SEM/data/CC2015data.csv",header = TRUE)
+cc2015 <- read.csv("CC2015data.csv",header = TRUE)
 
 #function for ranking the data
 minrank <- function(x){rank(x, ties.method = "min")}
@@ -188,13 +188,25 @@ COLOR <- rep(1,nrow(new_dat)); COLOR[a] <- 2
   ##Code to generate the plot and change the indices 
     CCScores_r_cov_new$symbols <- rep(0,length(CCScores_r_cov_new)) 
     CCScores_r_cov_new$symbols[a] <- 1
+  
+    ##Now we classify based on the scores
+    
+    mcres<-Mclust(CCScores_r_cov_new$Overall)
+    #summary(mcres)
+    
+    
+    Classifications <- mcres$classification
+    #rownames(Classifications) <- cc2015Ps$NAME
+    
   #creates a plot and colors by Carnegie Classification Colors  
-    ggplot(CCScores_r_cov_new) + geom_point(aes(x = STEM, y = HUM, color = factor(symbols), shape = factor(symbols), size = factor(symbols)))+ 
+    ggplot(CCScores_r_cov_new) + geom_point(aes(x = STEM, y = HUM, color = factor(Classifications), shape = factor(symbols), size = factor(symbols)))+ 
       ggtitle("Predicted vs Actual Classifications") + theme_bw() + coord_fixed(ratio = 1)+
-      theme_classic()
+      theme_classic() + guides(shape = FALSE) + guides(size = FALSE) + 
+      #theme(legend.position="right", legend.box = "vertical") + 
+      labs(color = "Classification") 
     
   
-  })
+})
 
   
   #render some test text

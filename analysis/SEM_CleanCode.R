@@ -57,7 +57,7 @@ non-STEM = ~ Hum PhD + Other PhD + Soc. Sci PhD +
 STEM
 '
 
-
+library(lavaan)
 lavaan_sem_new <- lavaan::sem(model4, data=cc2015_r, std.lv=TRUE,
                               orthogonal=FALSE, se="robust.huber.white")
 lavaan::summary(lavaan_sem_new, standardized=TRUE, fit.measures=TRUE)
@@ -69,7 +69,7 @@ inspect(lavaan_sem_new, what = 'std')$lambda
 
 #path diagram
 
-source('https://raw.githubusercontent.com/brandmaier/onyxR/master/tools/install.R')
+#source('https://raw.githubusercontent.com/brandmaier/onyxR/master/tools/install.R')
 library(onyxR)
 onyx(lavaan_sem_new)
 
