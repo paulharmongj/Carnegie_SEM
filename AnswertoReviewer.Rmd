@@ -1,0 +1,151 @@
+---
+title: "Response to Review Comments"
+author: "Paul Harmon"
+date: "April 29, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(pander)
+library(semPlot)
+```
+
+## Introduction: 
+
+One of the points brought up by the reviewer is that the model is too sensitive to the size of the institutions. The reviewer notes the following in the feedback: 
+
+"Adopting the K&S variables cannot be imposed on these authors;  however, a parallel re-analysis using those 10 variables and a comparison with their current findings is HIGHLY DESIRABLE.  If the results are quite similar (as expected?), this
+would remove an unimportant source of noise resulting from the small and variable number of PhD's produced
+*each year* in the 3 boxes.  To be explicit, in point 4 above, produce a second HGHMM set of scores using the
+K&S per capita variables.  The final two scores would be (1) the original (biased towards large schools andd
+(2) a second (biased towards small schools via per capita."
+
+
+We were unable to get the model to fit as a copy of the Carnegie version, but I interpret this comment as fitting the per-capita features into the SEM as we structured it. 
+
+
+## Model Results:
+
+The results from our original model: 
+```{r, out.width = '80%'}
+library(dplyr);library(ggplot2);library(ggthemes);library(mclust);library(ggforce);library(shinyjs)
+cc2015 <- filter(read.csv("data/CC2015data.csv",header = TRUE),BASIC2015 %in%c(15,16,17))
+#dataset that we want to use
+cc2015Ps<-
+  na.omit(cc2015[,c("NAME","BASIC2010","BASIC2015","FACNUM","HUM_RSD","OTHER_RSD","SOCSC_RSD","STEM_RSD","PDNFRSTAFF","S.ER.D","NONS.ER.D")])
+minrank <- function(x){rank(x, ties.method = "min")}
+#calculate the ranked data
+cc2015.r <- data.frame(cc2015Ps[,1:3],sapply(cc2015Ps[,-c(1:3)],minrank)) 
+cc2015percap <- cc2015Ps[,c("PDNFRSTAFF","S.ER.D","NONS.ER.D")]/cc2015Ps$FACNUM
+colnames(cc2015percap) <- c("PDNRSTAFF_PC", "S.ER.D_PC", "NONS.ER.D_PC")
+cc2015percap.r<-data.frame(sapply(cc2015percap,minrank))
+
+#sem using raw data
+cc2015_new <- cbind(cc2015.r, cc2015percap)
+#cc2015_new <- cc2015.r
+
+model_alt <- '
+#latent factors
+STEM=~STEM_RSD+PDNFRSTAFF+S.ER.D + FACNUM
+HUM=~HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D + FACNUM
+#factor of factors
+Overall=~STEM+HUM
+'
+lavaan_sem_r_alternate <- lavaan::sem(model_alt, data=cc2015_new, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+
+
+#predicts the scores
+CCScores_r_cov <- as.data.frame(lavaan::predict(lavaan_sem_r_alternate))
+CCScores_r_cov_new <- apply(CCScores_r_cov[,c(1,2)], 2, scale)
+
+mcres<-Mclust(CCScores_r_cov$Overall)
+#summary(mcres)
+Classifications <- mcres$classification
+    #rownames(Classifications) <- cc2015Ps$NAME
+#creates a plot and colors by Carnegie Classification Colors  
+ggplot(CCScores_r_cov) + geom_point(aes(x = STEM, y = HUM, color = factor(Classifications))) + 
+ggtitle("Predicted vs Actual Classifications") + theme_bw() + coord_fixed(ratio = 1)+
+theme_classic() + guides(shape = FALSE) + guides(size = FALSE) + 
+labs(color = "Classification")+xlab("STEM") + ylab("Non-STEM")
+    
+Scores1 <- CCScores_r_cov
+Class1 <- Classifications
+```
+
+
+```{r}
+lavaan::summary(lavaan_sem_r_alternate, fit.measures=TRUE)
+```
+
+
+## Alternate Model
+
+The model with Per-capita included looks a little different. A path diagram is given below. 
+
+```{r, out.width = '100%'}
+model_alt2 <- '
+#latent factors
+STEM=~STEM_RSD+PDNFRSTAFF+S.ER.D + FACNUM + S.ER.D_PC + PDNRSTAFF_PC
+HUM=~HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D + FACNUM + NONS.ER.D_PC
+#factor of factors
+Overall=~STEM+HUM
+'
+
+
+lavaan_sem_r_alternate <- lavaan::sem(model_alt2, data=cc2015_new, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+
+semPaths(lavaan_sem_r_alternate)
+
+
+#predicts the scores
+CCScores_r_cov <- as.data.frame(lavaan::predict(lavaan_sem_r_alternate))
+CCScores_r_cov_new <- apply(CCScores_r_cov[,c(1,2)], 2, scale)
+
+mcres<-Mclust(CCScores_r_cov$Overall)
+#summary(mcres)
+Classifications <- mcres$classification
+    #rownames(Classifications) <- cc2015Ps$NAME
+#creates a plot and colors by Carnegie Classification Colors  
+ggplot(CCScores_r_cov) + geom_point(aes(x = -STEM, y = HUM, color = factor(Classifications))) + 
+ggtitle("Predicted vs Actual Classifications") + theme_bw() + coord_fixed(ratio = 1)+
+theme_classic() + guides(shape = FALSE) + guides(size = FALSE) + 
+labs(color = "Classification")+xlab("-1*STEM") + ylab("Non-STEM")
+
+Scores2 <- CCScores_r_cov
+Scores2$Name <- cc2015_new$NAME
+Class2 <- Classifications
+```
+
+
+The summary of the model is here: 
+
+```{r}
+lavaan::summary(lavaan_sem_r_alternate, fit.measures=TRUE)
+```
+
+## Results
+
+These are very preliminary results, but the shape hasn't changed drastically. A couple of institutions get pulled away from the rest of the cluster - the bottom one on the stem scale is interesting. Including per-capita features does not seem to cause problems in the SEM model, as the model converges.
+
+However, the sign on the STEM term has flipped - loadings are now negative, and I had to reverse the order of the STEM factor to get the plot to point in the direction we expected to see. (This does not have an effect on the groupings but is interesting nonetheless).  Looking at the estimated coefficients for the loadings and their associated p-values, we see that the evidence in favor of an effect of the humanities latent factor is moderate at best; nearly all the p-values for the model with per-capita features indicate diminished strength of evidence.  
+
+Looking at some of the individual school classifications, we see that Cal Tech remains in the middle-size category and that . 
+
+```{r}
+x <- tibble(Scores2$Name, Scores1$Overall, Scores2$Overall, Class1, Class2)
+names(x) <- c("Name","Score1","Score2", "M1Class", "M2Class")
+#x$DifferenceSq <- (x$Score1 - x$Score2)^2
+x$AbsDiff <- abs(x$Score1 - x$Score2)
+
+#biggest difference schools
+arrange(x, desc(AbsDiff)) %>% head(15) %>% pander()
+
+
+```
+
+
+
+
+
+

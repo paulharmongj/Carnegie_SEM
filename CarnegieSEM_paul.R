@@ -1,6 +1,6 @@
 #read in data
 setwd("~/Carnegie-SEM/data")
-cc2015 <- read.csv("CC2015data.csv",header = TRUE)
+cc2015 <- read.csv("data/CC2015data.csv",header = TRUE)
 
 ########2015################
 cc2015.full <- read.csv("CC2015data.csv", header = TRUE, as.is = TRUE)
@@ -227,10 +227,55 @@ lavaan::summary(lavaan_sem_r_alternate, fit.measures=TRUE)
 #path diagram
 semPaths(lavaan_sem_r_alternate)
 
-
 predict_alt <- lavaan::predict(lavaan_sem_r_alternate)
 plot(-predict_alt[,1],-predict_alt[,2], col = cc2015_r$BASIC2015, pch = 11)
 plot(density(-predict_alt[,3]))
+
+
+
+### Version with Per-capita variables included
+model_alt2 <- '
+#latent factors
+STEM=~STEM_RSD+PDNFRSTAFF+S.ER.D + FACNUM + S.ER.D_PC + PDNRSTAFF_PC
+HUM=~HUM_RSD + OTHER_RSD + SOCSC_RSD + NONS.ER.D + FACNUM + NONS.ER.D + PDNRSTAFF_PC
+#factor of factors
+Overall=~STEM+HUM
+
+
+'
+lavaan_sem_r_alternate2 <- lavaan::sem(model_alt2, data=cc2015_r, std.lv=TRUE, orthogonal=FALSE, se="robust.huber.white")
+lavaan::summary(lavaan_sem_r_alternate2, fit.measures=TRUE)
+
+
+##predicts the scores
+CCScores_r_cov_new <- as.data.frame(lavaan::predict(lavaan_sem_r_alternate2))
+range_scores_new <- max(CCScores_r_cov_new$Overall) - min(CCScores_r_cov_new$Overall)
+CCScores_r_cov_new$rate_2015 <- ifelse(CCScores_r_cov_new$Overall < min(CCScores_r_cov_new$Overall)+((1/3)*range_scores), 'A', ifelse(CCScores_r_cov$Overall > max(CCScores_r_cov$Overall)-((1/3)*range_scores), 'C', 'B'))
+
+##Code to generate the plot and change the indices 
+CCScores_r_cov_new$symbols <- rep(0,length(CCScores_r_cov_new)) 
+CCScores_r_cov_new$symbols[a] <- 1
+
+##Now we classify based on the scores
+
+mcres<-Mclust(CCScores_r_cov_new$Overall)
+#summary(mcres)
+
+
+Classifications <- mcres$classification
+#rownames(Classifications) <- cc2015Ps$NAME
+
+#create a table of nearest neighbors
+dist <- abs(CCScores_r_cov_new$Overall[a] - CCScores_r_cov_new$Overall)
+
+
+#creates a plot and colors by Carnegie Classification Colors  
+ggplot(CCScores_r_cov_new) + geom_point(aes(x = STEM, y = HUM, color = factor(Classifications), shape = factor(symbols), size = factor(symbols)))+ 
+  ggtitle("Predicted vs Actual Classifications") + theme_bw() + coord_fixed(ratio = 1)+
+  theme_classic() + guides(shape = FALSE) + guides(size = FALSE) + 
+  labs(color = "Classification")+xlab("STEM") + ylab("Non-STEM")
+
+
 
 
 
